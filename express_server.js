@@ -64,6 +64,10 @@ app.get("/register", (req, res) => {
   res.render("register");     
 });
 
+app.get("/login", (req, res) => { 
+  res.render("login");     
+});
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id]};  
   res.render("urls_index", templateVars);     
@@ -109,7 +113,7 @@ app.post("/register", (req, res) => {
   if ((!req.body.email) || (!req.body.password)) {
     res.status(400).send(`Invalid email or password. Error code ${res.statusCode} `);
   } else if (checkEmailMatch(users, req.body.email) === "Email already exists") {
-    res.status(400).send('Email already exits. Error code ${res.statusCode}');
+    res.status(400).send(`Email already exits. Error code ${res.statusCode}`);
   } else {
     let randomString = generateRandomString();
     users[randomString] = {"id": randomString, "email": req.body.email, "password": req.body.password };
