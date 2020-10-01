@@ -40,6 +40,14 @@ const users = {
   }
 };
 
+const checkEmailMatch = function (usersdb, email) {
+  for (let user in usersdb) {
+    if (usersdb[user]["email"] === email) {
+      return ("Email already exists");
+    }
+  }
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -98,11 +106,17 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   console.log(req.body);
-  let randomString = generateRandomString();
-  users[randomString] = {"id": randomString, "email": req.body.email, "password": req.body.password };
-  console.log(users);
-  res.cookie("user_id", randomString);
-  res.redirect(`/urls`);
+  if ((!req.body.email) || (!req.body.password)) {
+    res.status(400).send(`Invalid email or password. Error code ${res.statusCode} `);
+  } else if (checkEmailMatch(users, req.body.email) === "Email already exists") {
+    res.status(400).send('Email already exits. Error code ${res.statusCode}');
+  } else {
+    let randomString = generateRandomString();
+    users[randomString] = {"id": randomString, "email": req.body.email, "password": req.body.password };
+    console.log(users);
+    res.cookie("user_id", randomString);
+    res.redirect(`/urls`);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
