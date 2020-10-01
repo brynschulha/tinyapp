@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcrypt');
 
 const generateRandomString = function () {
   let possibleCharacters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "x", "w", "y", "z", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -142,10 +143,11 @@ app.post("/login", (req, res) => {
     res.status(403).send(`Invalid email. Error code ${res.statusCode} `);
     return;
   }  
-  if (user.password !== req.body.password) {
+  if (!bcrypt.compareSync(req.body.password, user["password"])) {
     res.status(403).send(`Wrong Password. Error code ${res.statusCode} `);
     return;
   }
+  console.log(users);
   //user is good, set cookie and redirect
   res.cookie("user_id", user.id);
   res.redirect(`/urls`);
@@ -168,7 +170,9 @@ app.post("/register", (req, res) => {
     res.status(400).send(`Email already exits. Error code ${res.statusCode}`);
   } else {
     let randomString = generateRandomString();
-    users[randomString] = {"id": randomString, "email": req.body.email, "password": req.body.password };
+    const password = req.body.password;
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    users[randomString] = {"id": randomString, "email": req.body.email, "password": hashedPassword };
     res.cookie("user_id", randomString);
     res.redirect(`/urls`);
   }
