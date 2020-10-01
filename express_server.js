@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 // const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session')
+const helpers = require('./helpers');
 
 const generateRandomString = function () {
   let possibleCharacters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "x", "w", "y", "z", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -48,15 +49,6 @@ const users = {
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
-};
-
-const getUserByEmail = function (usersdb, email) {
-  for (let user in usersdb) {
-    if (usersdb[user]["email"] === email) {
-      return (usersdb[user]);
-    } 
-  }
-  return null;
 };
 
 const urlsForUser = function (id) {
@@ -147,7 +139,7 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/login", (req, res) => {
   console.log(req.body);
-  const user = getUserByEmail(users, req.body.email);
+  const user = helpers(users, req.body.email);
   if (!user) {
     res.status(403).send(`Invalid email. Error code ${res.statusCode} `);
     return;
@@ -170,7 +162,7 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   console.log(req.body);
-  const user = getUserByEmail(users, req.body.email);
+  const user = helpers(users, req.body.email);
   console.log(req.body.email);
   if ((!req.body.email) || (!req.body.password)) {
     res.status(400).send(`Invalid email or password. Error code ${res.statusCode} `);
