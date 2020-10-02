@@ -2,9 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-// const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const helpers = require('./helpers');
 
 const generateRandomString = function () {
@@ -21,12 +20,9 @@ const generateRandomString = function () {
 
 app.use(bodyParser.urlencoded({extended: true}));
 
-// app.use(cookieParser());
-
 app.use(cookieSession({
   name: 'session',
   keys: ["some-long-secret"],
-
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
@@ -62,15 +58,16 @@ const urlsForUser = function (id) {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session.user_id;
+  if (!userId) {
+    res.redirect("/login");
+    return;
+  }
+  res.redirect(`/urls`);
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/register", (req, res) => { 
@@ -90,7 +87,7 @@ app.get("/login", (req, res) => {
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   if (!userId) {
-    res.redirect("/login");
+    res.send("Error, please login first.")
     return;
   }
   const userUrls = urlsForUser(req.session.user_id);
@@ -128,7 +125,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
-  if (userId !== urlDatabase[url]["userID"]) {
+  if (userId !== urlDatabase[req.params.id]["userID"]) {
     res.redirect("/login");
     return;
   }
@@ -138,7 +135,6 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  console.log(req.body);
   const user = helpers(users, req.body.email);
   if (!user) {
     res.status(403).send(`Invalid email. Error code ${res.statusCode} `);
@@ -148,7 +144,6 @@ app.post("/login", (req, res) => {
     res.status(403).send(`Wrong Password. Error code ${res.statusCode} `);
     return;
   }
-  console.log(users);
   //user is good, set cookie and redirect
   req.session.user_id = user.id;
   res.redirect(`/urls`);
@@ -157,13 +152,11 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   //clears existing cookie
   req.session = null;
-  res.redirect(`/urls`);
+  res.redirect(`/login`);
 });
 
 app.post("/register", (req, res) => {
-  console.log(req.body);
   const user = helpers(users, req.body.email);
-  console.log(req.body.email);
   if ((!req.body.email) || (!req.body.password)) {
     res.status(400).send(`Invalid email or password. Error code ${res.statusCode} `);
   } 
@@ -182,7 +175,11 @@ app.post("/register", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   if (!userId) {
-    res.redirect("/login");
+    res.send("Error, please login first.")
+    return;
+  }
+  if (userId !== urlDatabase[req.params.shortURL]["userID"]) {
+    res.send("Error, you do not own this URL.")
     return;
   }
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: users[req.session.user_id] };  
@@ -190,7 +187,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL]["longURL"];
   res.redirect(longURL);
 });
 
